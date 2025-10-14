@@ -6,7 +6,7 @@ func (s *Server) HealthcheckHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		status := envelope{
 			"status":    "available",
-			"instances": 12,
+			"instances": len(instances),
 		}
 
 		err := s.writeJSON(w, http.StatusOK, status, nil)

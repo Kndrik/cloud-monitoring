@@ -27,3 +27,7 @@ func (s *Server) serverErrorResponse(w http.ResponseWriter, r *http.Request, err
 	message := "the server encountered a problem and could not process the request"
 	s.errorResponse(w, r, http.StatusInternalServerError, message)
 }
+
+func (s *Server) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
+	s.errorResponse(w, r, http.StatusBadRequest, err.Error())
+}
