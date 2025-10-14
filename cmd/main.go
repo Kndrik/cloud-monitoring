@@ -15,7 +15,7 @@ func main() {
 	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
 	flag.Parse()
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true}))
 
 	apiServer := api.New(logger, &cfg)
 
