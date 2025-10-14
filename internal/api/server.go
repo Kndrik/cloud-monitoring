@@ -25,7 +25,7 @@ func New(logger *slog.Logger, config *Config) *Server {
 
 func (s *Server) Start() error {
 	mux := http.NewServeMux()
-	registerRoutes(mux)
+	s.registerRoutes(mux)
 
 	srv := &http.Server{
 		Addr:     fmt.Sprintf(":%d", s.config.Port),
