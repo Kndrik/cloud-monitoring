@@ -1,6 +1,8 @@
 package api
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func (s *Server) logError(r *http.Request, err error) {
 	var (
@@ -11,7 +13,7 @@ func (s *Server) logError(r *http.Request, err error) {
 	s.logger.Error(err.Error(), "method", method, "uri", uri)
 }
 
-func (s *Server) errorResponse(w http.ResponseWriter, r *http.Request, status int, message string) {
+func (s *Server) errorResponse(w http.ResponseWriter, r *http.Request, status int, message any) {
 	env := envelope{"error": message}
 
 	err := s.writeJSON(w, status, env, nil)
@@ -30,4 +32,8 @@ func (s *Server) serverErrorResponse(w http.ResponseWriter, r *http.Request, err
 
 func (s *Server) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
 	s.errorResponse(w, r, http.StatusBadRequest, err.Error())
+}
+
+func (s *Server) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
+	s.errorResponse(w, r, http.StatusUnprocessableEntity, errors)
 }

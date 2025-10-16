@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+
+	"github.com/Kndrik/cloud-monitoring/internal/data"
 )
 
 type Config struct {
@@ -14,12 +16,14 @@ type Config struct {
 type Server struct {
 	logger *slog.Logger
 	config *Config
+	models *data.Models
 }
 
-func New(logger *slog.Logger, config *Config) *Server {
+func New(logger *slog.Logger, config *Config, models *data.Models) *Server {
 	return &Server{
 		logger: logger.With("package", "api"),
 		config: config,
+		models: models,
 	}
 }
 

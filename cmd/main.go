@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Kndrik/cloud-monitoring/internal/api"
+	"github.com/Kndrik/cloud-monitoring/internal/data"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -32,8 +33,6 @@ func main() {
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true}))
 
-	apiServer := api.New(logger, &apiConfig)
-
 	logger.Info("connecting to the database")
 	pool, err := openDB(dbConfig)
 	if err != nil {
@@ -41,6 +40,9 @@ func main() {
 		os.Exit(1)
 	}
 	defer pool.Close()
+
+	models := data.NewModels(pool)
+	apiServer := api.New(logger, &apiConfig, &models)
 
 	if err = apiServer.Start(); err != nil {
 		logger.Error("failed to start server", "error", err)

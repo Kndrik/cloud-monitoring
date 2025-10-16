@@ -4,16 +4,13 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
+
+	"github.com/Kndrik/cloud-monitoring/internal/data"
+	"github.com/Kndrik/cloud-monitoring/internal/validator"
 )
 
-type Instance struct {
-	Id          int    `json:"id"`
-	Name        string `json:"name"`
-	Ip          string `json:"ip"`
-	RefreshRate int32  `json:"refreshrate"`
-}
-
-var instances []Instance = []Instance{}
+var instances []data.Instance = []data.Instance{}
 
 func (s *Server) getInstancesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +30,7 @@ func (s *Server) addInstanceHandler() http.HandlerFunc {
 		var input struct {
 			Name        string `json:"name"`
 			Ip          string `json:"ip"`
-			RefreshRate int32  `json:"refreshrate"`
+			RefreshRate int    `json:"refresh_rate"`
 		}
 
 		err := s.readJSON(w, r, &input)
@@ -42,14 +39,23 @@ func (s *Server) addInstanceHandler() http.HandlerFunc {
 			return
 		}
 
-		newInstance := Instance{
-			Id:          len(instances) + 1,
+		newInstance := &data.Instance{
 			Name:        input.Name,
 			Ip:          input.Ip,
-			RefreshRate: input.RefreshRate,
+			RefreshRate: time.Duration(input.RefreshRate) * time.Second,
 		}
 
-		instances = append(instances, newInstance)
+		v := validator.New()
+		if data.ValidateInstance(v, newInstance); !v.Valid() {
+			s.failedValidationResponse(w, r, v.Errors)
+			return
+		}
+
+		err = s.models.Instances.Insert(newInstance)
+		if err != nil {
+			s.serverErrorResponse(w, r, err)
+			return
+		}
 
 		err = s.writeJSON(w, http.StatusCreated, envelope{"instance": newInstance}, nil)
 		if err != nil {
