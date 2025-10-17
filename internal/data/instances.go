@@ -43,3 +43,38 @@ func (m *InstanceModel) Insert(instance *Instance) error {
 	return m.DB.QueryRow(ctx, query, args...).Scan(&instance.Id, &instance.CreatedAt, &instance.Version)
 
 }
+
+func (m *InstanceModel) GetAll() ([]*Instance, error) {
+	query := "SELECT * FROM instances"
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	instances := []*Instance{}
+	for rows.Next() {
+		var instance Instance
+		err := rows.Scan(
+			&instance.Id,
+			&instance.CreatedAt,
+			&instance.Name,
+			&instance.Ip,
+			&instance.RefreshRate,
+			&instance.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+		instances = append(instances, &instance)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return instances, nil
+}

@@ -14,11 +14,13 @@ var instances []data.Instance = []data.Instance{}
 
 func (s *Server) getInstancesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data := envelope{
-			"instances": instances,
+		instances, err := s.models.Instances.GetAll()
+		if err != nil {
+			s.serverErrorResponse(w, r, err)
+			return
 		}
 
-		err := s.writeJSON(w, http.StatusOK, data, nil)
+		err = s.writeJSON(w, http.StatusOK, envelope{"instances": instances}, nil)
 		if err != nil {
 			s.serverErrorResponse(w, r, err)
 		}

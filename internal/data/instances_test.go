@@ -113,7 +113,7 @@ func TestValidateInstance(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			v := validator.New()
-			inst := tc.instance // copy
+			inst := tc.instance
 			ValidateInstance(v, &inst)
 
 			if v.Valid() != tc.expectOK {
