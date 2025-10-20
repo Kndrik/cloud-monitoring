@@ -78,11 +78,15 @@ func (s *Server) removeInstanceHandler() http.HandlerFunc {
 			s.badRequestResponse(w, r, err)
 		}
 
-		for i, instance := range instances {
-			if instance.Id == int(id) {
-				instances = append(instances[:i], instances[i+1:]...)
-				break
+		err = s.models.Instances.Delete(id)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				s.notFoundResponse(w, r)
+			default:
+				s.serverErrorResponse(w, r, err)
 			}
+			return
 		}
 
 		err = s.writeJSON(w, http.StatusOK, envelope{"message": "instance successfully removed"}, nil)

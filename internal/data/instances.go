@@ -94,4 +94,26 @@ func (m *InstanceModel) Count() (int, error) {
 	return count, nil
 }
 
-// func (m *InstanceModel) Delete(id int64)
+func (m *InstanceModel) Delete(id int64) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+
+	query := `
+		DELETE FROM instances
+		WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
