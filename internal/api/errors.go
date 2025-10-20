@@ -41,3 +41,8 @@ func (s *Server) failedValidationResponse(w http.ResponseWriter, r *http.Request
 func (s *Server) notFoundResponse(w http.ResponseWriter, r *http.Request) {
 	s.errorResponse(w, r, http.StatusNotFound, "resource not found")
 }
+
+func (s *Server) editConflictResponse(w http.ResponseWriter, r *http.Request) {
+	message := "unable to edit the record due to an edit conflict, please try again."
+	s.errorResponse(w, r, http.StatusConflict, message)
+}

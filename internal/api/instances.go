@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/Kndrik/cloud-monitoring/internal/data"
@@ -68,14 +67,10 @@ func (s *Server) addInstanceHandler() http.HandlerFunc {
 
 func (s *Server) removeInstanceHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pathId := r.PathValue("id")
-		if pathId == "" {
-			s.badRequestResponse(w, r, errors.New("id cannot be empty"))
-		}
-
-		id, err := strconv.ParseInt(pathId, 10, 0)
+		id, err := s.readIdParam(r)
 		if err != nil {
-			s.badRequestResponse(w, r, err)
+			s.notFoundResponse(w, r)
+			return
 		}
 
 		err = s.models.Instances.Delete(id)
@@ -90,6 +85,74 @@ func (s *Server) removeInstanceHandler() http.HandlerFunc {
 		}
 
 		err = s.writeJSON(w, http.StatusOK, envelope{"message": "instance successfully removed"}, nil)
+		if err != nil {
+			s.serverErrorResponse(w, r, err)
+		}
+	}
+}
+
+func (s *Server) updateInstanceHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := s.readIdParam(r)
+		if err != nil {
+			s.notFoundResponse(w, r)
+			return
+		}
+
+		instance, err := s.models.Instances.Get(id)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				s.notFoundResponse(w, r)
+			default:
+				s.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+
+		var input struct {
+			Name        *string `json:"name"`
+			Ip          *string `json:"ip"`
+			RefreshRate *int    `json:"refresh_rate"`
+		}
+
+		err = s.readJSON(w, r, &input)
+		if err != nil {
+			s.badRequestResponse(w, r, err)
+			return
+		}
+
+		if input.Name != nil {
+			instance.Name = *input.Name
+		}
+
+		if input.Ip != nil {
+			instance.Ip = *input.Ip
+		}
+
+		if input.RefreshRate != nil {
+			instance.RefreshRate = time.Duration(*input.RefreshRate) * time.Second
+		}
+
+		v := validator.New()
+
+		if data.ValidateInstance(v, instance); !v.Valid() {
+			s.failedValidationResponse(w, r, v.Errors)
+			return
+		}
+
+		err = s.models.Instances.Update(instance)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrEditConflict):
+				s.editConflictResponse(w, r)
+			default:
+				s.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+
+		err = s.writeJSON(w, http.StatusOK, envelope{"instance": instance}, nil)
 		if err != nil {
 			s.serverErrorResponse(w, r, err)
 		}

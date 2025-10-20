@@ -2,6 +2,8 @@ package data
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/Kndrik/cloud-monitoring/internal/validator"
@@ -79,6 +81,37 @@ func (m *InstanceModel) GetAll() ([]*Instance, error) {
 	return instances, nil
 }
 
+func (m *InstanceModel) Get(id int64) (*Instance, error) {
+	query := `
+	SELECT id, created_at, name, ip, refresh_rate, version
+	FROM instances
+	WHERE id = $1`
+
+	var instance Instance
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRow(ctx, query, id).Scan(
+		&instance.Id,
+		&instance.CreatedAt,
+		&instance.Name,
+		&instance.Ip,
+		&instance.RefreshRate,
+		&instance.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &instance, nil
+}
+
 func (m *InstanceModel) Count() (int, error) {
 	var count int
 	query := `SELECT COUNT(*) FROM instances`
@@ -113,6 +146,37 @@ func (m *InstanceModel) Delete(id int64) error {
 
 	if result.RowsAffected() == 0 {
 		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (m *InstanceModel) Update(instance *Instance) error {
+	query := `
+	UPDATE instances
+	SET name = $1, ip = $2, refresh_rate = $3, version = version + 1
+	WHERE id = $4 AND version = $5
+	RETURNING version`
+
+	args := []any{
+		instance.Name,
+		instance.Ip,
+		instance.RefreshRate,
+		instance.Id,
+		instance.Version,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRow(ctx, query, args...).Scan(&instance.Version)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
 	}
 
 	return nil

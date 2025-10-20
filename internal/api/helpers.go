@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -72,4 +73,18 @@ func (s *Server) readJSON(w http.ResponseWriter, r *http.Request, dst any) error
 	}
 
 	return nil
+}
+
+func (s *Server) readIdParam(r *http.Request) (int64, error) {
+	pathId := r.PathValue("id")
+	if pathId == "" {
+		return 0, errors.New("id parameter is empty")
+	}
+
+	id, err := strconv.ParseInt(pathId, 10, 0)
+	if err != nil {
+		return 0, errors.New("invalid id parameter")
+	}
+
+	return id, nil
 }
