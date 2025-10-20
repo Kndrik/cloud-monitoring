@@ -78,3 +78,20 @@ func (m *InstanceModel) GetAll() ([]*Instance, error) {
 
 	return instances, nil
 }
+
+func (m *InstanceModel) Count() (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM instances`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRow(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+// func (m *InstanceModel) Delete(id int64)

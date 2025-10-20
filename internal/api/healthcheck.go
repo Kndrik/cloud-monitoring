@@ -4,12 +4,18 @@ import "net/http"
 
 func (s *Server) HealthcheckHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		status := envelope{
-			"status":    "available",
-			"instances": len(instances),
+		count, err := s.models.Instances.Count()
+		if err != nil {
+			s.serverErrorResponse(w, r, err)
+			return
 		}
 
-		err := s.writeJSON(w, http.StatusOK, status, nil)
+		status := envelope{
+			"status":    "available",
+			"instances": count,
+		}
+
+		err = s.writeJSON(w, http.StatusOK, status, nil)
 		if err != nil {
 			s.serverErrorResponse(w, r, err)
 		}
