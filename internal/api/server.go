@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/Kndrik/cloud-monitoring/internal/data"
 )
@@ -17,6 +19,7 @@ type Server struct {
 	logger *slog.Logger
 	config *Config
 	models *data.Models
+	srv    *http.Server
 }
 
 func New(logger *slog.Logger, config *Config, models *data.Models) *Server {
@@ -31,18 +34,33 @@ func (s *Server) Start() error {
 	mux := http.NewServeMux()
 	s.registerRoutes(mux)
 
-	srv := &http.Server{
+	s.srv = &http.Server{
 		Addr:     fmt.Sprintf(":%d", s.config.Port),
 		Handler:  mux,
 		ErrorLog: slog.NewLogLogger(s.logger.Handler(), slog.LevelError),
 	}
 
-	s.logger.Info("starting server", "address", srv.Addr, "env", s.config.Env)
+	s.logger.Info("starting server", "address", s.srv.Addr, "env", s.config.Env)
 
-	err := srv.ListenAndServe()
+	err := s.srv.ListenAndServe()
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (s *Server) Stop() error {
+	s.logger.Info("shutting down the server")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err := s.srv.Shutdown(ctx)
+	if err != nil {
+		return err
+	}
+
+	s.logger.Info("server shut down")
 	return nil
 }

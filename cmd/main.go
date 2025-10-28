@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/Kndrik/cloud-monitoring/internal/api"
 	"github.com/Kndrik/cloud-monitoring/internal/data"
+	"github.com/Kndrik/cloud-monitoring/internal/monitor"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -19,6 +23,9 @@ type dbConfig struct {
 }
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
 	apiConfig := api.Config{}
 	dbConfig := dbConfig{}
 
@@ -44,9 +51,27 @@ func main() {
 	models := data.NewModels(pool)
 	apiServer := api.New(logger, &apiConfig, &models)
 
-	if err = apiServer.Start(); err != nil {
-		logger.Error("failed to start server", "error", err)
-		os.Exit(1)
+	logger.Info("starting scheduler")
+	scheduler := monitor.NewScheduler(&models, logger)
+	if err = scheduler.Start(ctx); err != nil {
+		logger.Error("failed to start the moniroting service", "error", err)
+	}
+
+	go func() {
+		if err = apiServer.Start(); err != nil {
+			if !errors.Is(err, http.ErrServerClosed) {
+				logger.Error("failed to start server", "error", err)
+			}
+			stop()
+		}
+	}()
+
+	<-ctx.Done()
+	logger.Info("shutting down the app")
+	scheduler.Stop()
+	err = apiServer.Stop()
+	if err != nil {
+		logger.Error("error shutting down the server", "err", err)
 	}
 }
 
