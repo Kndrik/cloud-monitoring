@@ -33,11 +33,10 @@ func (s *Scheduler) Start(ctx context.Context) error {
 	}
 
 	for _, instance := range instances {
-		w := Worker{Instance: instance, Logger: s.logger, MetricsModel: &s.models.Metrics}
+		w := NewWorker(instance, s.logger, &s.models.Metrics)
 		s.wg.Go(func() {
 			w.Run(s.ctx)
 		})
-
 	}
 
 	s.logger.Info("started workers", "amount", strconv.Itoa(len(instances)))

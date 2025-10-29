@@ -9,13 +9,21 @@ import (
 )
 
 type Worker struct {
-	Instance     *data.Instance
-	Logger       *slog.Logger
-	MetricsModel *data.MetricsModel
+	instance     *data.Instance
+	logger       *slog.Logger
+	metricsModel *data.MetricsModel
+}
+
+func NewWorker(instance *data.Instance, logger *slog.Logger, metricsModel *data.MetricsModel) *Worker {
+	return &Worker{
+		instance:     instance,
+		logger:       logger,
+		metricsModel: metricsModel,
+	}
 }
 
 func (w *Worker) Run(ctx context.Context) {
-	ticker := time.NewTicker(w.Instance.RefreshRate)
+	ticker := time.NewTicker(w.instance.RefreshRate)
 
 	go func() {
 		for {
@@ -23,11 +31,11 @@ func (w *Worker) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				metrics := GenerateFakeMetrics(w.Instance)
-				w.Logger.Info("[worker] inserting metrics")
-				err := w.MetricsModel.Insert(metrics)
+				metrics := GenerateFakeMetrics(w.instance)
+				w.logger.Info("[worker] inserting metrics")
+				err := w.metricsModel.Insert(metrics)
 				if err != nil {
-					w.Logger.Error("failed to insert metric", "instance", w.Instance.Name, "error", err)
+					w.logger.Error("failed to insert metric", "instance", w.instance.Name, "error", err)
 				}
 			}
 		}
