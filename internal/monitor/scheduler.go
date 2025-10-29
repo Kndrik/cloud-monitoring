@@ -49,5 +49,4 @@ func (s *Scheduler) Stop() {
 	s.logger.Info("shutting down all workers")
 	s.cancel()
 	s.wg.Wait()
-	s.logger.Info("all workers have been shut down")
 }

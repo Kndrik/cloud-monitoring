@@ -61,6 +61,5 @@ func (s *Server) Stop() error {
 		return err
 	}
 
-	s.logger.Info("server shut down")
 	return nil
 }
