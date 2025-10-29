@@ -13,10 +13,12 @@ var (
 
 type Models struct {
 	Instances InstanceModel
+	Metrics   MetricsModel
 }
 
 func NewModels(db *pgxpool.Pool) Models {
 	return Models{
 		Instances: InstanceModel{DB: db},
+		Metrics:   MetricsModel{DB: db},
 	}
 }

@@ -9,8 +9,9 @@ import (
 )
 
 type Worker struct {
-	Instance *data.Instance
-	Logger   *slog.Logger
+	Instance     *data.Instance
+	Logger       *slog.Logger
+	MetricsModel *data.MetricsModel
 }
 
 func (w *Worker) Run(ctx context.Context) {
