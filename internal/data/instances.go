@@ -43,7 +43,6 @@ func (m *InstanceModel) Insert(instance *Instance) error {
 	defer cancel()
 
 	return m.DB.QueryRow(ctx, query, args...).Scan(&instance.Id, &instance.CreatedAt, &instance.Version)
-
 }
 
 func (m *InstanceModel) GetAll() ([]*Instance, error) {

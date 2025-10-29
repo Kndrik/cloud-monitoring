@@ -23,7 +23,12 @@ func (w *Worker) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				w.Logger.Info("worker fetching data", "instance", w.Instance.Name)
+				metrics := GenerateFakeMetrics(w.Instance)
+				w.Logger.Info("[worker] inserting metrics")
+				err := w.MetricsModel.Insert(metrics)
+				if err != nil {
+					w.Logger.Error("failed to insert metric", "instance", w.Instance.Name, "error", err)
+				}
 			}
 		}
 	}()

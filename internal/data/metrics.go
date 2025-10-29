@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -10,8 +11,8 @@ import (
 type Metrics struct {
 	Id          int           `json:"id"`
 	InstanceId  int           `json:"instance_id"`
-	CpuUsage    float32       `json:"cpu_usage"`
-	MemoryUsage float32       `json:"memory_usage"`
+	CpuUsage    float64       `json:"cpu_usage"`
+	MemoryUsage float64       `json:"memory_usage"`
 	Uptime      time.Duration `json:"uptime"`
 	RecordedAt  time.Time     `json:"-"`
 }
@@ -22,7 +23,7 @@ type MetricsModel struct {
 
 func (m *MetricsModel) Insert(metrics *Metrics) error {
 	query := `
-		INSERT INTO instances (instance_id, cpu_usage, memory_usage, uptime)
+		INSERT INTO metrics (instance_id, cpu_usage, memory_usage, uptime)
 		VALUES ($1, $2, $3, $4)
 		RETURNING id, recorded_at`
 
@@ -31,5 +32,6 @@ func (m *MetricsModel) Insert(metrics *Metrics) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	fmt.Printf("[model] inserting metrics into db")
 	return m.DB.QueryRow(ctx, query, args...).Scan(&metrics.Id, &metrics.RecordedAt)
 }
