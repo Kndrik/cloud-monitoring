@@ -9,4 +9,6 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/instances", s.addInstanceHandler())
 	mux.HandleFunc("DELETE /api/v1/instances/{id}", s.removeInstanceHandler())
 	mux.HandleFunc("PATCH /api/v1/instances/{id}", s.updateInstanceHandler())
+
+	mux.HandleFunc("GET /api/v1/instances/{id}/metrics", s.getInstanceMetricsHandler())
 }

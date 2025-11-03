@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -32,6 +31,38 @@ func (m *MetricsModel) Insert(metrics *Metrics) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	fmt.Printf("[model] inserting metrics into db")
 	return m.DB.QueryRow(ctx, query, args...).Scan(&metrics.Id, &metrics.RecordedAt)
+}
+
+// TODO add filters to return a maximum amount of metrics and pagination
+func (m *MetricsModel) GetInstanceMetrics(instanceId int) ([]*Metrics, error) {
+	query := `SELECT * FROM metrics WHERE instance_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	metrics := []*Metrics{}
+	rows, err := m.DB.Query(ctx, query, instanceId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var metric Metrics
+		err := rows.Scan(
+			&metric.Id,
+			&metric.InstanceId,
+			&metric.CpuUsage,
+			&metric.MemoryUsage,
+			&metric.Uptime,
+			&metric.RecordedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, &metric)
+	}
+
+	return metrics, nil
 }

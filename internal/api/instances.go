@@ -9,8 +9,6 @@ import (
 	"github.com/Kndrik/cloud-monitoring/internal/validator"
 )
 
-var instances []data.Instance = []data.Instance{}
-
 func (s *Server) getInstancesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		instances, err := s.models.Instances.GetAll()
